@@ -7,8 +7,8 @@
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
-    <!-- MindAR -->
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <!-- MindAR CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe-css.prod.js"></script>
 
     <style>
       html, body {
@@ -44,34 +44,35 @@
         margin-top: 20px;
       }
 
-      /* YouTube Overlay */
+      /* YouTube 3D Overlay */
       #youtube-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.85);
         display: none;
-        z-index: 10;
-        justify-content: center;
-        align-items: center;
+        width: 800px;
+        height: 450px;
+        background: black;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative; /* Not fixed anymore */
       }
 
       #youtube-overlay iframe {
-        width: 90%;
-        max-width: 800px;
-        aspect-ratio: 16 / 9;
-        border-radius: 12px;
+        width: 100%;
+        height: 100%;
+        border: none;
       }
 
       #close-btn {
         position: absolute;
-        top: 16px;
-        right: 16px;
+        top: 10px;
+        right: 10px;
         font-size: 20px;
-        background: black;
+        background: rgba(0,0,0,0.5);
         color: white;
         border: none;
-        padding: 8px 12px;
+        padding: 5px 10px;
         cursor: pointer;
+        border-radius: 5px;
+        z-index: 10;
       }
       /* Detection Indicator */
       #scanning-indicator {
@@ -98,7 +99,7 @@
       <button id="start-btn">Start AR</button>
     </div>
 
-    <!-- YouTube Overlay -->
+    <!-- YouTube Overlay (3D) -->
     <div id="youtube-overlay">
       <button id="close-btn">✕</button>
       <iframe
@@ -120,9 +121,14 @@
       mindar-image="imageTargetSrc: targets.mind; autoStart: false; filterMinCF: 0.0001; filterBeta: 0.001;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights"
     >
-      <a-entity mindar-image-target="targetIndex: 0"></a-entity>
-      <a-camera look-controls="enabled: false"></a-camera>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-entity id="youtube-container" mindar-image-css-entity="element: #youtube-overlay;"></a-entity>
+      </a-entity>
     </a-scene>
 
     <script>
@@ -154,7 +160,7 @@
         const targetSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?si=${YOUTUBE_SI}&autoplay=1&rel=0`;
         if (iframe.src !== targetSrc) {
           iframe.src = targetSrc;
-          overlay.style.display = "flex";
+          overlay.style.display = "block"; // Changed from flex to block for CSS3D
         }
       });
 
