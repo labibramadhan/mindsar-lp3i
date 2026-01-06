@@ -11,8 +11,11 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-      body {
+      html, body {
         margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
         overflow: hidden;
       }
 
@@ -70,6 +73,20 @@
         padding: 8px 12px;
         cursor: pointer;
       }
+      /* Detection Indicator */
+      #scanning-indicator {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-family: sans-serif;
+        z-index: 5;
+        display: none;
+      }
     </style>
   </head>
 
@@ -92,10 +109,12 @@
       ></iframe>
     </div>
 
+    <!-- Scanning Indicator -->
+    <div id="scanning-indicator">Scanning for target...</div>
+
     <!-- AR Scene -->
     <a-scene
       mindar-image="imageTargetSrc: targets.mind; autoStart: false;"
-      embedded
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
     >
@@ -106,6 +125,7 @@
     <script>
       const startScreen = document.getElementById("start-screen");
       const startBtn = document.getElementById("start-btn");
+      const indicator = document.getElementById("scanning-indicator");
       const overlay = document.getElementById("youtube-overlay");
       const iframe = document.getElementById("youtube-frame");
       const closeBtn = document.getElementById("close-btn");
@@ -116,17 +136,20 @@
 
       startBtn.addEventListener("click", () => {
         startScreen.style.display = "none";
+        indicator.style.display = "block";
         sceneEl.systems["mindar-image-system"].start();
       });
 
-      target.addEventListener("targetFound", () => {
-        console.log("targetFound");
+      target.addEventListener("targetFound", (event) => {
+        console.log("targetFound", event);
+        indicator.style.display = "none";
         iframe.src = `https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&rel=0`;
         overlay.style.display = "flex";
       });
 
       target.addEventListener("targetLost", () => {
         console.log("targetLost");
+        indicator.style.display = "block";
         iframe.src = "";
         overlay.style.display = "none";
       });

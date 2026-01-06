@@ -2,6 +2,9 @@
   "name": "mindsar-lp3i",
   "compatibility_date": "2026-01-06",
   "assets": {
-    "directory": "./"
+    "directory": "./",
+    "exclude": [
+      ".git/**"
+    ]
   }
 }
