@@ -45,36 +45,51 @@
         margin-top: 20px;
       }
 
-      /* YouTube 3D Overlay */
-      #youtube-overlay {
+      /* YouTube 3D Container */
+      #youtube-3d-container {
         position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.85);
-        display: none;
+        pointer-events: none;
         z-index: 10;
-        justify-content: center;
-        align-items: center;
+        display: none;
       }
 
-      #youtube-overlay iframe {
-        width: 90%;
-        max-width: 800px;
-        aspect-ratio: 16 / 9;
-        border-radius: 12px;
-        border: none;
+      #youtube-3d-container.visible {
+        display: block;
       }
 
-      #close-btn {
+      #youtube-3d-wrapper {
         position: absolute;
-        top: 16px;
-        right: 16px;
-        font-size: 20px;
-        background: black;
-        color: white;
-        border: none;
-        padding: 8px 12px;
-        cursor: pointer;
+        transform-style: preserve-3d;
+        pointer-events: auto;
       }
+
+      #youtube-3d-wrapper iframe {
+        width: 320px;
+        height: 180px;
+        border-radius: 8px;
+        border: 3px solid white;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        background: black;
+      }
+
+      #close-3d-btn {
+        position: absolute;
+        top: -12px;
+        right: -12px;
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+        background: #ff4444;
+        color: white;
+        border: 2px solid white;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+
       /* Detection Indicator */
       #scanning-indicator {
         position: fixed;
@@ -100,18 +115,20 @@
       <button id="start-btn">Start AR</button>
     </div>
 
-    <!-- YouTube Overlay (3D) -->
-    <div id="youtube-overlay">
-      <button id="close-btn">✕</button>
-      <iframe
-        id="youtube-frame"
-        src=""
-        title="YouTube video player"
-        frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        referrerpolicy="strict-origin-when-cross-origin"
-        allowfullscreen
-      ></iframe>
+    <!-- YouTube 3D Container (positioned above target) -->
+    <div id="youtube-3d-container">
+      <div id="youtube-3d-wrapper">
+        <button id="close-3d-btn">✕</button>
+        <iframe
+          id="youtube-frame"
+          src=""
+          title="YouTube video player"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen
+        ></iframe>
+      </div>
     </div>
 
     <!-- Scanning Indicator -->
@@ -123,23 +140,86 @@
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
     >
-      <a-entity mindar-image-target="targetIndex: 0"></a-entity>
-      <a-camera look-controls="enabled: false"></a-camera>
+      <a-entity id="target-entity" mindar-image-target="targetIndex: 0">
+        <!-- Invisible anchor point above target for tracking -->
+        <a-entity id="youtube-anchor" position="0 0.6 0"></a-entity>
+      </a-entity>
+      <a-camera id="ar-camera" look-controls="enabled: false"></a-camera>
     </a-scene>
 
     <script>
       const startScreen = document.getElementById("start-screen");
       const startBtn = document.getElementById("start-btn");
       const indicator = document.getElementById("scanning-indicator");
-      const overlay = document.getElementById("youtube-overlay");
+      const youtubeContainer = document.getElementById("youtube-3d-container");
+      const youtubeWrapper = document.getElementById("youtube-3d-wrapper");
       const iframe = document.getElementById("youtube-frame");
-      const closeBtn = document.getElementById("close-btn");
+      const closeBtn = document.getElementById("close-3d-btn");
       const sceneEl = document.querySelector("a-scene");
       const target = document.querySelector("[mindar-image-target]");
+      const youtubeAnchor = document.getElementById("youtube-anchor");
+      const arCamera = document.getElementById("ar-camera");
+
       let lostTimeout;
+      let isTracking = false;
+      let animationFrameId = null;
 
       const YOUTUBE_ID = "2tSEd0rEtLE";
       const YOUTUBE_SI = "gxS1UrP9CAU4mHV_";
+
+      // Convert 3D world position to 2D screen position
+      function worldToScreen(object3D, camera, renderer) {
+        const vector = new THREE.Vector3();
+        object3D.getWorldPosition(vector);
+
+        vector.project(camera);
+
+        const widthHalf = renderer.domElement.clientWidth / 2;
+        const heightHalf = renderer.domElement.clientHeight / 2;
+
+        return {
+          x: (vector.x * widthHalf) + widthHalf,
+          y: -(vector.y * heightHalf) + heightHalf,
+          z: vector.z
+        };
+      }
+
+      // Calculate scale based on distance from camera
+      function getScaleFactor(object3D, camera) {
+        const objectPos = new THREE.Vector3();
+        const cameraPos = new THREE.Vector3();
+        
+        object3D.getWorldPosition(objectPos);
+        camera.getWorldPosition(cameraPos);
+        
+        const distance = objectPos.distanceTo(cameraPos);
+        // Base scale factor - adjust as needed
+        const baseScale = 400;
+        return Math.max(0.3, Math.min(2, baseScale / distance));
+      }
+
+      // Update YouTube container position to follow 3D anchor
+      function updateYoutubePosition() {
+        if (!isTracking) return;
+
+        const camera = arCamera.getObject3D("camera");
+        const renderer = sceneEl.renderer;
+        const anchorObject = youtubeAnchor.object3D;
+
+        if (camera && renderer && anchorObject) {
+          const screenPos = worldToScreen(anchorObject, camera, renderer);
+          const scale = getScaleFactor(anchorObject, camera);
+
+          // Only show if in front of camera
+          if (screenPos.z < 1) {
+            youtubeWrapper.style.transform = `translate(-50%, -100%) scale(${scale})`;
+            youtubeWrapper.style.left = `${screenPos.x}px`;
+            youtubeWrapper.style.top = `${screenPos.y}px`;
+          }
+        }
+
+        animationFrameId = requestAnimationFrame(updateYoutubePosition);
+      }
 
       startBtn.addEventListener("click", () => {
         startScreen.style.display = "none";
@@ -151,11 +231,18 @@
         console.log("targetFound", event);
         if (lostTimeout) clearTimeout(lostTimeout);
         indicator.style.display = "none";
+        isTracking = true;
 
         const targetSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?si=${YOUTUBE_SI}&autoplay=1&rel=0`;
         if (iframe.src !== targetSrc) {
           iframe.src = targetSrc;
-          overlay.style.display = "flex";
+        }
+        
+        youtubeContainer.classList.add("visible");
+        
+        // Start position tracking loop
+        if (!animationFrameId) {
+          updateYoutubePosition();
         }
       });
 
@@ -164,16 +251,28 @@
         // Debounce the lost event to prevent flickering
         lostTimeout = setTimeout(() => {
           console.log("targetLost confirmed");
+          isTracking = false;
           indicator.style.display = "block";
           iframe.src = "";
-          overlay.style.display = "none";
+          youtubeContainer.classList.remove("visible");
+          
+          if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+          }
         }, 2000); // 2 second delay before closing
       });
 
       closeBtn.addEventListener("click", () => {
         console.log("closeBtn");
+        isTracking = false;
         iframe.src = "";
-        overlay.style.display = "none";
+        youtubeContainer.classList.remove("visible");
+        
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
       });
     </script>
   </body>
