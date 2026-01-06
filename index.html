@@ -114,7 +114,7 @@
 
     <!-- AR Scene -->
     <a-scene
-      mindar-image="imageTargetSrc: targets.mind; autoStart: false;"
+      mindar-image="imageTargetSrc: targets.mind; autoStart: false; filterMinCF: 0.0001; filterBeta: 0.001;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
     >
@@ -133,6 +133,7 @@
       const target = document.querySelector("[mindar-image-target]");
 
       const YOUTUBE_ID = "2tSEd0rEtLE";
+      let lostTimeout;
 
       startBtn.addEventListener("click", () => {
         startScreen.style.display = "none";
@@ -142,16 +143,26 @@
 
       target.addEventListener("targetFound", (event) => {
         console.log("targetFound", event);
+        if (lostTimeout) clearTimeout(lostTimeout);
         indicator.style.display = "none";
-        iframe.src = `https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&rel=0`;
-        overlay.style.display = "flex";
+        
+        // Only load iframe if it's not already showing the correct video
+        const targetSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&rel=0`;
+        if (iframe.src !== targetSrc) {
+          iframe.src = targetSrc;
+          overlay.style.display = "flex";
+        }
       });
 
       target.addEventListener("targetLost", () => {
-        console.log("targetLost");
-        indicator.style.display = "block";
-        iframe.src = "";
-        overlay.style.display = "none";
+        console.log("targetLost - waiting to confirm...");
+        // Debounce the lost event to prevent flickering
+        lostTimeout = setTimeout(() => {
+          console.log("targetLost confirmed");
+          indicator.style.display = "block";
+          iframe.src = "";
+          overlay.style.display = "none";
+        }, 2000); // 2 second delay before closing
       });
 
       closeBtn.addEventListener("click", () => {
