@@ -104,7 +104,10 @@
       <iframe
         id="youtube-frame"
         src=""
-        allow="autoplay; encrypted-media"
+        title="YouTube video player"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin"
         allowfullscreen
       ></iframe>
     </div>
@@ -133,6 +136,7 @@
       const target = document.querySelector("[mindar-image-target]");
 
       const YOUTUBE_ID = "2tSEd0rEtLE";
+      const YOUTUBE_SI = "gxS1UrP9CAU4mHV_";
       let lostTimeout;
 
       startBtn.addEventListener("click", () => {
@@ -147,7 +151,7 @@
         indicator.style.display = "none";
         
         // Only load iframe if it's not already showing the correct video
-        const targetSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?autoplay=1&rel=0`;
+        const targetSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?si=${YOUTUBE_SI}&autoplay=1&rel=0`;
         if (iframe.src !== targetSrc) {
           iframe.src = targetSrc;
           overlay.style.display = "flex";
