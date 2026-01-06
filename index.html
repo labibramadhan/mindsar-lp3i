@@ -136,7 +136,7 @@
 
     <!-- AR Scene -->
     <a-scene
-      mindar-image="imageTargetSrc: targets.mind; autoStart: false; filterMinCF: 0.0001; filterBeta: 0.001;"
+      mindar-image="imageTargetSrc: targets.mind; autoStart: false; filterMinCF: 0.001; filterBeta: 1000; warmupTolerance: 2; missTolerance: 8;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
       color-space="sRGB"
