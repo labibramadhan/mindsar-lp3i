@@ -67,10 +67,10 @@
       }
 
       #youtube-3d-wrapper iframe {
-        width: 80vw;
-        height: 80vh;
-        border-radius: 8px;
-        border: 3px solid white;
+        width: 640px;
+        height: 360px;
+        border-radius: 12px;
+        border: 4px solid white;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         background: black;
       }
@@ -197,8 +197,8 @@
         
         const distance = objectPos.distanceTo(cameraPos);
         // Base scale factor - adjust as needed
-        const baseScale = 400;
-        return Math.max(0.3, Math.min(2, baseScale / distance));
+        const baseScale = 800;
+        return Math.max(0.5, Math.min(4, baseScale / distance));
       }
 
       // Update YouTube container position to follow 3D anchor
