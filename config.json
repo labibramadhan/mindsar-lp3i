@@ -1,0 +1,27 @@
+{
+  "mindFile": "targets.mind",
+  "overlayType": "gallery",
+  "youtube": {
+    "id": "2tSEd0rEtLE",
+    "si": "gxS1UrP9CAU4mHV_"
+  },
+  "galleries": [
+    {
+      "name": "Ruangan Kelas",
+      "photos": [
+        { "src": "images/ruangan-kelas-1.jpeg" },
+        { "src": "images/ruangan-kelas-2.jpeg" }
+      ]
+    },
+    {
+      "name": "Laboratorium",
+      "photos": [
+        { "src": "images/ruangan-lab-multimedia.jpeg" },
+        { "src": "images/ruangan-lab-office.jpeg" },
+        { "src": "images/ruangan-lab-programming.jpeg" },
+        { "src": "images/ruangan-lab-pbl-1.jpeg" },
+        { "src": "images/ruangan-lab-pbl-2.jpeg" }
+      ]
+    }
+  ]
+}

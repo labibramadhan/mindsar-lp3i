@@ -93,6 +93,147 @@
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       }
 
+      /* Gallery Overlay */
+      #gallery-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 12, 20, 0.6);
+        backdrop-filter: blur(8px);
+        z-index: 11;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+
+      #gallery-overlay.visible {
+        display: flex;
+      }
+
+      .gallery-panel {
+        width: min(960px, 92vw);
+        max-height: 85vh;
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 20px 24px 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .gallery-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .gallery-title {
+        margin: 0;
+        font-family: "Poppins", system-ui, sans-serif;
+        font-size: 20px;
+        color: #1b1f2a;
+      }
+
+      .gallery-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: #1b1f2a;
+        color: #ffffff;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      .gallery-list {
+        overflow-y: auto;
+        padding-right: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .gallery-card {
+        border: 1px solid #e0e4f0;
+        border-radius: 16px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: #f8f9ff;
+      }
+
+      .gallery-card h3 {
+        margin: 0;
+        font-family: "Poppins", system-ui, sans-serif;
+        font-size: 16px;
+        color: #1b1f2a;
+      }
+
+      .gallery-thumbs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 10px;
+      }
+
+      .gallery-thumb {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: pointer;
+        border: none;
+        padding: 0;
+        background: #dfe6f5;
+        aspect-ratio: 4 / 3;
+      }
+
+      .gallery-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      /* Fullscreen Viewer */
+      #fullscreen-viewer {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 10, 12, 0.9);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 12;
+      }
+
+      #fullscreen-viewer.visible {
+        display: flex;
+      }
+
+      #fullscreen-image {
+        max-width: 90vw;
+        max-height: 85vh;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      }
+
+      #fullscreen-close {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: none;
+        background: #ffffff;
+        color: #111827;
+        font-size: 18px;
+        cursor: pointer;
+      }
+
       /* Detection Indicator */
       #scanning-indicator {
         position: fixed;
@@ -134,6 +275,23 @@
       </div>
     </div>
 
+    <!-- Gallery Overlay -->
+    <div id="gallery-overlay">
+      <div class="gallery-panel">
+        <div class="gallery-header">
+          <h2 class="gallery-title">Gallery Preview</h2>
+          <button class="gallery-close" id="gallery-close">✕</button>
+        </div>
+        <div class="gallery-list" id="gallery-list"></div>
+      </div>
+    </div>
+
+    <!-- Fullscreen Image Viewer -->
+    <div id="fullscreen-viewer">
+      <button id="fullscreen-close">✕</button>
+      <img id="fullscreen-image" src="" alt="Gallery fullscreen" />
+    </div>
+
     <!-- Scanning Indicator -->
     <div id="scanning-indicator">Scanning for target...</div>
 
@@ -158,6 +316,12 @@
       const youtubeWrapper = document.getElementById("youtube-3d-wrapper");
       const iframe = document.getElementById("youtube-frame");
       const closeBtn = document.getElementById("close-3d-btn");
+      const galleryOverlay = document.getElementById("gallery-overlay");
+      const galleryList = document.getElementById("gallery-list");
+      const galleryClose = document.getElementById("gallery-close");
+      const fullscreenViewer = document.getElementById("fullscreen-viewer");
+      const fullscreenImage = document.getElementById("fullscreen-image");
+      const fullscreenClose = document.getElementById("fullscreen-close");
       const sceneEl = document.querySelector("a-scene");
       const target = document.querySelector("[mindar-image-target]");
       const youtubeAnchor = document.getElementById("youtube-anchor");
@@ -167,8 +331,7 @@
       let isTracking = false;
       let animationFrameId = null;
 
-      const YOUTUBE_ID = "2tSEd0rEtLE";
-      const YOUTUBE_SI = "gxS1UrP9CAU4mHV_";
+      let overlayConfig = null;
 
       // Convert 3D world position to 2D screen position
       function worldToScreen(object3D, camera, renderer) {
@@ -224,6 +387,95 @@
         animationFrameId = requestAnimationFrame(updateYoutubePosition);
       }
 
+      function hideOverlays() {
+        youtubeContainer.classList.remove("visible");
+        galleryOverlay.classList.remove("visible");
+        iframe.src = "";
+      }
+
+      function renderGalleryList(galleries = []) {
+        galleryList.innerHTML = "";
+
+        if (!galleries.length) {
+          const empty = document.createElement("p");
+          empty.textContent = "No galleries configured.";
+          empty.style.fontFamily = "Poppins, system-ui, sans-serif";
+          empty.style.color = "#4b5563";
+          galleryList.appendChild(empty);
+          return;
+        }
+
+        galleries.forEach((gallery) => {
+          const card = document.createElement("div");
+          card.className = "gallery-card";
+
+          const title = document.createElement("h3");
+          title.textContent = gallery.name || "Untitled";
+
+          const thumbs = document.createElement("div");
+          thumbs.className = "gallery-thumbs";
+
+          (gallery.photos || []).forEach((photo) => {
+            const button = document.createElement("button");
+            button.className = "gallery-thumb";
+
+            const img = document.createElement("img");
+            img.src = photo.src;
+            img.alt = `${gallery.name || "Gallery"} photo`;
+
+            button.addEventListener("click", () => {
+              fullscreenImage.src = photo.src;
+              fullscreenViewer.classList.add("visible");
+            });
+
+            button.appendChild(img);
+            thumbs.appendChild(button);
+          });
+
+          card.appendChild(title);
+          card.appendChild(thumbs);
+          galleryList.appendChild(card);
+        });
+      }
+
+      function openOverlay() {
+        if (!overlayConfig) return;
+
+        const overlayType = overlayConfig.overlayType || "youtube";
+
+        if (overlayType === "gallery") {
+          renderGalleryList(overlayConfig.galleries);
+          galleryOverlay.classList.add("visible");
+          return;
+        }
+
+        const youtubeConfig = overlayConfig.youtube || {};
+        const targetSrc = `https://www.youtube.com/embed/${youtubeConfig.id}?si=${youtubeConfig.si || ""}&autoplay=1&rel=0`;
+        if (iframe.src !== targetSrc) {
+          iframe.src = targetSrc;
+        }
+        youtubeContainer.classList.add("visible");
+
+        if (!animationFrameId) {
+          updateYoutubePosition();
+        }
+      }
+
+      async function loadOverlayConfig() {
+        try {
+          const response = await fetch("config.json");
+          overlayConfig = await response.json();
+
+          const mindFile = overlayConfig.mindFile || "targets.mind";
+          sceneEl.setAttribute(
+            "mindar-image",
+            `imageTargetSrc: ${mindFile}; autoStart: false; filterMinCF: 0.0001; filterBeta: 0.001;`
+          );
+        } catch (error) {
+          console.error("Failed to load config.json", error);
+        }
+      }
+
       startBtn.addEventListener("click", () => {
         startScreen.style.display = "none";
         indicator.style.display = "block";
@@ -235,18 +487,7 @@
         if (lostTimeout) clearTimeout(lostTimeout);
         indicator.style.display = "none";
         isTracking = true;
-
-        const targetSrc = `https://www.youtube.com/embed/${YOUTUBE_ID}?si=${YOUTUBE_SI}&autoplay=1&rel=0`;
-        if (iframe.src !== targetSrc) {
-          iframe.src = targetSrc;
-        }
-        
-        youtubeContainer.classList.add("visible");
-        
-        // Start position tracking loop
-        if (!animationFrameId) {
-          updateYoutubePosition();
-        }
+        openOverlay();
       });
 
       target.addEventListener("targetLost", () => {
@@ -256,8 +497,7 @@
           console.log("targetLost confirmed");
           isTracking = false;
           indicator.style.display = "block";
-          iframe.src = "";
-          youtubeContainer.classList.remove("visible");
+          hideOverlays();
           
           if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
@@ -269,14 +509,31 @@
       closeBtn.addEventListener("click", () => {
         console.log("closeBtn");
         isTracking = false;
-        iframe.src = "";
-        youtubeContainer.classList.remove("visible");
+        hideOverlays();
         
         if (animationFrameId) {
           cancelAnimationFrame(animationFrameId);
           animationFrameId = null;
         }
       });
+
+      galleryClose.addEventListener("click", () => {
+        galleryOverlay.classList.remove("visible");
+      });
+
+      fullscreenClose.addEventListener("click", () => {
+        fullscreenViewer.classList.remove("visible");
+        fullscreenImage.src = "";
+      });
+
+      fullscreenViewer.addEventListener("click", (event) => {
+        if (event.target === fullscreenViewer) {
+          fullscreenViewer.classList.remove("visible");
+          fullscreenImage.src = "";
+        }
+      });
+
+      loadOverlayConfig();
     </script>
   </body>
 </html>
