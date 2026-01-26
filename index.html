@@ -198,6 +198,113 @@
         display: block;
       }
 
+      #product-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 12, 20, 0.6);
+        backdrop-filter: blur(8px);
+        z-index: 11;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+
+      #product-overlay.visible {
+        display: flex;
+      }
+
+      .product-panel {
+        width: min(720px, 92vw);
+        max-height: 85vh;
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 20px 24px 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .product-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .product-title {
+        margin: 0;
+        font-family: "Poppins", system-ui, sans-serif;
+        font-size: 20px;
+        color: #1b1f2a;
+      }
+
+      .product-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: #1b1f2a;
+        color: #ffffff;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      .product-body {
+        overflow-y: auto;
+        padding-right: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .product-thumb {
+        width: 100%;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #e0e4f0;
+        background: #f8f9ff;
+      }
+
+      .product-thumb img {
+        width: 100%;
+        height: auto;
+        display: block;
+        object-fit: cover;
+        aspect-ratio: 16 / 9;
+      }
+
+      .product-name {
+        margin: 0;
+        font-family: "Poppins", system-ui, sans-serif;
+        font-size: 18px;
+        color: #111827;
+      }
+
+      .product-description {
+        margin: 0;
+        font-family: "Poppins", system-ui, sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #4b5563;
+      }
+
+      .product-qty {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: #f8f9ff;
+        border: 1px solid #e0e4f0;
+        font-family: "Poppins", system-ui, sans-serif;
+        color: #111827;
+        width: fit-content;
+      }
+
       /* Fullscreen Viewer */
       #fullscreen-viewer {
         position: fixed;
@@ -286,6 +393,26 @@
       </div>
     </div>
 
+    <div id="product-overlay">
+      <div class="product-panel">
+        <div class="product-header">
+          <h2 class="product-title">Product Details</h2>
+          <button class="product-close" id="product-close">✕</button>
+        </div>
+        <div class="product-body">
+          <div class="product-thumb" id="product-thumb-wrap" style="display: none;">
+            <img id="product-thumb" src="" alt="Product thumbnail" />
+          </div>
+          <h3 class="product-name" id="product-name"></h3>
+          <p class="product-description" id="product-description"></p>
+          <div class="product-qty">
+            <span>Current Qty</span>
+            <strong id="product-qty"></strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Fullscreen Image Viewer -->
     <div id="fullscreen-viewer">
       <button id="fullscreen-close">✕</button>
@@ -319,6 +446,13 @@
       const galleryOverlay = document.getElementById("gallery-overlay");
       const galleryList = document.getElementById("gallery-list");
       const galleryClose = document.getElementById("gallery-close");
+      const productOverlay = document.getElementById("product-overlay");
+      const productClose = document.getElementById("product-close");
+      const productName = document.getElementById("product-name");
+      const productDescription = document.getElementById("product-description");
+      const productQty = document.getElementById("product-qty");
+      const productThumbWrap = document.getElementById("product-thumb-wrap");
+      const productThumb = document.getElementById("product-thumb");
       const fullscreenViewer = document.getElementById("fullscreen-viewer");
       const fullscreenImage = document.getElementById("fullscreen-image");
       const fullscreenClose = document.getElementById("fullscreen-close");
@@ -390,6 +524,7 @@
       function hideOverlays() {
         youtubeContainer.classList.remove("visible");
         galleryOverlay.classList.remove("visible");
+        productOverlay.classList.remove("visible");
         iframe.src = "";
       }
 
@@ -438,6 +573,25 @@
         });
       }
 
+      function renderProductDetails(product = {}) {
+        const name = product.name || "Untitled product";
+        const description = product.description || "No description.";
+        const qty = Number.isFinite(product.currentQty) ? product.currentQty : 0;
+
+        const thumb = typeof product.thumbnail === "string" ? product.thumbnail.trim() : "";
+        if (thumb) {
+          productThumbWrap.style.display = "block";
+          productThumb.src = thumb;
+        } else {
+          productThumb.src = "";
+          productThumbWrap.style.display = "none";
+        }
+
+        productName.textContent = name;
+        productDescription.textContent = description;
+        productQty.textContent = String(qty);
+      }
+
       function openOverlay() {
         if (!overlayConfig) return;
 
@@ -446,6 +600,12 @@
         if (overlayType === "gallery") {
           renderGalleryList(overlayConfig.galleries);
           galleryOverlay.classList.add("visible");
+          return;
+        }
+
+        if (overlayType === "product") {
+          renderProductDetails(overlayConfig.product);
+          productOverlay.classList.add("visible");
           return;
         }
 
@@ -519,6 +679,15 @@
 
       galleryClose.addEventListener("click", () => {
         galleryOverlay.classList.remove("visible");
+      });
+
+      productClose.addEventListener("click", () => {
+        productOverlay.classList.remove("visible");
+      });
+
+      productThumb.addEventListener("error", () => {
+        productThumb.src = "";
+        productThumbWrap.style.display = "none";
       });
 
       fullscreenClose.addEventListener("click", () => {

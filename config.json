@@ -1,9 +1,15 @@
 {
   "mindFile": "targets.mind",
-  "overlayType": "gallery",
+  "overlayType": "product",
   "youtube": {
     "id": "2tSEd0rEtLE",
     "si": "gxS1UrP9CAU4mHV_"
+  },
+  "product": {
+    "name": "Tumblr",
+    "thumbnail": "images/product-tumblr.jpeg",
+    "description": "Tumblr air minum praktis dengan desain modern, terbuat dari bahan berkualitas yang aman untuk kesehatan. Cocok digunakan sehari-hari, baik di kantor, sekolah, maupun saat berolahraga. Dilengkapi penutup rapat untuk mencegah bocor dan menjaga minuman tetap segar lebih lama.",
+    "currentQty": 12
   },
   "galleries": [
     {
